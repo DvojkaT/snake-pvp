@@ -1,7 +1,18 @@
 package main
 
-import "fmt"
+import (
+	"snake/internal/api"
+
+	"github.com/gin-gonic/gin"
+)
 
 func main() {
-	fmt.Printf("Hello, world!\n")
+	r := gin.Default()
+
+	api.HandleRoutes(r)
+
+	err := r.Run(":8080")
+	if err != nil {
+		return
+	}
 }

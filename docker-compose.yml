@@ -1,4 +1,11 @@
 services:
+  app-package-install:
+    build:
+      dockerfile: ./docker/Dockerfile
+    volumes:
+      - .:/app
+    command: "[ -d vendor ] || go mod vendor"
+
   app:
     build:
       dockerfile: ./docker/Dockerfile
@@ -6,11 +13,15 @@ services:
       - "8080:8080"
     volumes:
       - .:/app
-#    healthcheck:
-#      test: [ "CMD", "wget", "-qO-", "http://localhost:8080/health" ]
-#      interval: 10s
-#      timeout: 3s
-#      retries: 10
+    command: "air -c .air.toml"
+    depends_on:
+      app-package-install:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [ "CMD", "wget", "-qO-", "http://localhost:8080/health" ]
+      interval: 10s
+      timeout: 3s
+      retries: 10
 
   node-package-install:
     image: oven/bun:1-alpine
@@ -29,8 +40,8 @@ services:
     ports:
       - "5173:5173"
     depends_on:
-#      app:
-#        condition: service_healthy
+      app:
+        condition: service_healthy
       node-package-install:
         condition: service_completed_successfully
     command: "bun run dev --host"
