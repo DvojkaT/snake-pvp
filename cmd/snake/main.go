@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"snake/internal/api"
+	"snake/internal/ws"
 	"time"
 
 	"github.com/centrifugal/centrifuge"
@@ -22,10 +23,13 @@ func main() {
 	}
 
 	api.HandleRoutes(r, node)
+	ws.HandleConnection(node)
 
-	if err := r.Run(":8080"); err != nil {
-		log.Fatal(err)
-	}
+	go func() {
+		if err := r.Run(":8080"); err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	err = node.Run()
 	if err != nil {
