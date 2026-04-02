@@ -26,15 +26,16 @@ func main() {
 	ws.HandleConnection(node)
 
 	go func() {
-		if err := r.Run(":8080"); err != nil {
+		err = node.Run()
+		if err != nil {
 			log.Fatal(err)
 		}
 	}()
 
-	err = node.Run()
-	if err != nil {
-		return
+	if err := r.Run(":8080"); err != nil {
+		log.Fatal(err)
 	}
+
 }
 
 func handleLog(e centrifuge.LogEntry) {
