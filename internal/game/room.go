@@ -1,6 +1,8 @@
 package game
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 )
 
@@ -19,11 +21,12 @@ type LobbyPlayer struct {
 
 type Room struct {
 	ID           string
-	Snakes       map[string]Snake
+	Snakes       map[string]*Snake
 	Players      map[string]LobbyPlayer
 	Status       status
 	Cells        [][]Cell
 	PlayersLimit int64
+	stopTimer    chan bool
 }
 
 func NewRoom(sizeX, sizeY, playersLimit int64) *Room {
@@ -33,11 +36,12 @@ func NewRoom(sizeX, sizeY, playersLimit int64) *Room {
 	}
 	return &Room{
 		ID:           uuid.NewString(),
-		Snakes:       map[string]Snake{},
+		Snakes:       map[string]*Snake{},
 		Players:      map[string]LobbyPlayer{},
 		Status:       LOBBY,
 		Cells:        cells,
 		PlayersLimit: playersLimit,
+		stopTimer:    make(chan bool),
 	}
 }
 
@@ -82,7 +86,7 @@ func (r *Room) StartGame() error {
 	}
 
 	for player, _ := range r.Players {
-		r.Snakes[player] = *r.setSnakePosition(index, player)
+		r.Snakes[player] = r.setSnakePosition(index, player)
 		index++
 	}
 
@@ -147,4 +151,70 @@ func (r *Room) setSnakePosition(index int, userID string) *Snake {
 	}
 
 	return nil
+}
+
+func (r *Room) StartTicker() {
+	ticker := time.NewTicker(time.Second / 2)
+	go func() {
+		defer ticker.Stop()
+		for {
+			select {
+			case <-r.stopTimer:
+				return
+			case <-ticker.C:
+				err := r.nextTick()
+				if err != nil {
+					return
+				}
+			}
+		}
+	}()
+}
+
+func (r *Room) StopTicker() {
+	close(r.stopTimer)
+}
+
+// nextTick Обработка тика каждый n времени
+func (r *Room) nextTick() error {
+	sizeX := len(r.Cells)
+	sizeY := len(r.Cells[0])
+	for _, snake := range r.Snakes {
+		withFruit := false
+		snakeNextHead, err := snake.NextHead(int64(sizeX), int64(sizeY))
+		if err != nil {
+			return err
+		}
+		switch r.Cells[snakeNextHead.x][snakeNextHead.y].object {
+		case Fruit:
+			withFruit = true
+		case SnakePart:
+			r.snakeLose(snake)
+			return nil
+		case Empty:
+		default:
+			return CellTypeNotFoundError
+		}
+
+		head, tail, err := snake.Move(withFruit, int64(sizeX), int64(sizeY))
+		if err != nil {
+			return err
+		}
+
+		// Двигаем голову на новое место
+		r.Cells[head.x][head.y].object = SnakePart
+		r.Cells[head.x][head.y].snake = snake
+
+		// В случае получения координат бывшего хвоста, удаляем точку
+		if tail != nil {
+			r.Cells[tail.x][tail.y].object = Empty
+			r.Cells[tail.x][tail.y].snake = nil
+		}
+
+	}
+	return nil
+}
+
+func (r *Room) snakeLose(snake *Snake) {
+	//todo
 }
