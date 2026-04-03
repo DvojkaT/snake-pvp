@@ -1,12 +1,17 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/centrifugal/centrifuge"
 	"github.com/gin-gonic/gin"
 )
 
 func HandleRoutes(r *gin.Engine, node *centrifuge.Node) {
 	websocketHandler := centrifuge.NewWebsocketHandler(node, centrifuge.WebsocketConfig{
+		CheckOrigin: func(r *http.Request) bool {
+			return true //todo
+		},
 		ReadBufferSize:     1024,
 		UseWriteBufferPool: true,
 	})

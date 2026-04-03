@@ -30,6 +30,10 @@ type Snake struct {
 	color     Color
 }
 
+type SnakeView struct {
+	Color Color `json:"color"`
+}
+
 func newSnake(points []Point, direction Direction, userID string, color Color) *Snake {
 	return &Snake{
 		points:    points,

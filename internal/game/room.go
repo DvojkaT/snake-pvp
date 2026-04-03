@@ -1,9 +1,9 @@
 package game
 
 import (
+	"fmt"
+	"log"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type status int64
@@ -27,6 +27,46 @@ type Room struct {
 	Cells        [][]Cell
 	PlayersLimit int64
 	stopTimer    chan bool
+	ViewState    chan *RoomView
+}
+
+type RoomView struct {
+	ID    string       `json:"id"`
+	Cells [][]CellView `json:"cells"`
+}
+
+func NewRoomView(room *Room) *RoomView {
+	cells := make([][]CellView, len(room.Cells))
+	for i := range cells {
+		cells[i] = make([]CellView, len(room.Cells[0]))
+	}
+
+	for indexX := range room.Cells {
+		for indexY, cell := range room.Cells[indexX] {
+			snakeView := &SnakeView{}
+			if cell.snake != nil {
+				snakeView.Color = cell.snake.color
+			} else {
+				snakeView = nil
+			}
+			cells[indexX][indexY] = CellView{
+				Object: cell.object,
+				Snake:  snakeView,
+			}
+		}
+	}
+
+	return &RoomView{
+		ID:    room.ID,
+		Cells: cells,
+	}
+}
+
+func NewLobbyPlayer(uuid, name string) *LobbyPlayer {
+	return &LobbyPlayer{
+		ID:   uuid,
+		Name: name,
+	}
 }
 
 func NewRoom(sizeX, sizeY, playersLimit int64) *Room {
@@ -35,13 +75,14 @@ func NewRoom(sizeX, sizeY, playersLimit int64) *Room {
 		cells[i] = make([]Cell, sizeY)
 	}
 	return &Room{
-		ID:           uuid.NewString(),
+		ID:           "test-game-id", //todo uuid.NewString()
 		Snakes:       map[string]*Snake{},
 		Players:      map[string]LobbyPlayer{},
 		Status:       LOBBY,
 		Cells:        cells,
 		PlayersLimit: playersLimit,
 		stopTimer:    make(chan bool),
+		ViewState:    make(chan *RoomView, 1),
 	}
 }
 
@@ -154,7 +195,7 @@ func (r *Room) setSnakePosition(index int, userID string) *Snake {
 }
 
 func (r *Room) StartTicker() {
-	ticker := time.NewTicker(time.Second / 2)
+	ticker := time.NewTicker(time.Second)
 	go func() {
 		defer ticker.Stop()
 		for {
@@ -163,7 +204,9 @@ func (r *Room) StartTicker() {
 				return
 			case <-ticker.C:
 				err := r.nextTick()
+				fmt.Printf("game %s ticked\n", r.ID)
 				if err != nil {
+					log.Printf("tick error: %v", err)
 					return
 				}
 			}
@@ -200,6 +243,7 @@ func (r *Room) nextTick() error {
 		if err != nil {
 			return err
 		}
+		fmt.Printf("snake %s. new head posotion - x: %d, y: %d\n", snake.userID, head.x, head.y)
 
 		// Двигаем голову на новое место
 		r.Cells[head.x][head.y].object = SnakePart
@@ -210,7 +254,7 @@ func (r *Room) nextTick() error {
 			r.Cells[tail.x][tail.y].object = Empty
 			r.Cells[tail.x][tail.y].snake = nil
 		}
-
+		r.ViewState <- NewRoomView(r)
 	}
 	return nil
 }

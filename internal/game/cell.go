@@ -13,6 +13,11 @@ type Cell struct {
 	snake  *Snake
 }
 
+type CellView struct {
+	Object CellType   `json:"object"`
+	Snake  *SnakeView `json:"snake"`
+}
+
 func NewCell(object CellType, snake *Snake) *Cell {
 	return &Cell{object, snake}
 }
