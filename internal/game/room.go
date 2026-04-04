@@ -19,6 +19,10 @@ type LobbyPlayer struct {
 	Name string
 }
 
+type RoomList map[string]*Room
+
+func NewRoomList() RoomList { return make(map[string]*Room) }
+
 type Room struct {
 	ID           string
 	Snakes       map[string]*Snake
@@ -69,12 +73,13 @@ func NewLobbyPlayer(uuid, name string) *LobbyPlayer {
 	}
 }
 
-func NewRoom(sizeX, sizeY, playersLimit int64) *Room {
+func NewRoom(list RoomList, sizeX, sizeY, playersLimit int64) *Room {
 	cells := make([][]Cell, sizeX)
 	for i := range cells {
 		cells[i] = make([]Cell, sizeY)
 	}
-	return &Room{
+
+	room := &Room{
 		ID:           "test-game-id", //todo uuid.NewString()
 		Snakes:       map[string]*Snake{},
 		Players:      map[string]LobbyPlayer{},
@@ -84,6 +89,10 @@ func NewRoom(sizeX, sizeY, playersLimit int64) *Room {
 		stopTimer:    make(chan bool),
 		ViewState:    make(chan *RoomView, 1),
 	}
+
+	list[room.ID] = room
+
+	return room
 }
 
 func (r *Room) AddPlayer(ID, name string) error {
@@ -130,6 +139,10 @@ func (r *Room) StartGame() error {
 		r.Snakes[player] = r.setSnakePosition(index, player)
 		index++
 	}
+
+	r.Cells[10][10].object = Fruit
+	r.Cells[20][10].object = Fruit
+	r.Cells[30][10].object = Fruit
 
 	r.Status = ACTIVE
 
@@ -195,7 +208,7 @@ func (r *Room) setSnakePosition(index int, userID string) *Snake {
 }
 
 func (r *Room) StartTicker() {
-	ticker := time.NewTicker(time.Second)
+	ticker := time.NewTicker(time.Second / 6)
 	go func() {
 		defer ticker.Stop()
 		for {
@@ -233,7 +246,7 @@ func (r *Room) nextTick() error {
 			withFruit = true
 		case SnakePart:
 			r.snakeLose(snake)
-			return nil
+			continue
 		case Empty:
 		default:
 			return CellTypeNotFoundError
@@ -249,16 +262,22 @@ func (r *Room) nextTick() error {
 		r.Cells[head.x][head.y].object = SnakePart
 		r.Cells[head.x][head.y].snake = snake
 
-		// В случае получения координат бывшего хвоста, удаляем точку
+		// В случае получения координат бывшего хвоста, удаляем точку.
 		if tail != nil {
 			r.Cells[tail.x][tail.y].object = Empty
 			r.Cells[tail.x][tail.y].snake = nil
 		}
-		r.ViewState <- NewRoomView(r)
 	}
+	r.ViewState <- NewRoomView(r)
 	return nil
 }
 
 func (r *Room) snakeLose(snake *Snake) {
-	//todo
+	fmt.Println("snake loses: snake - ", snake.userID)
+	for _, point := range snake.points {
+		r.Cells[point.x][point.y].snake = nil
+		r.Cells[point.x][point.y].object = Empty
+	}
+	snake.Die()
+	delete(r.Snakes, snake.userID)
 }

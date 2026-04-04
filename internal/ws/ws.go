@@ -3,14 +3,24 @@ package ws
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"snake/internal/game"
+	"strings"
 
 	"github.com/centrifugal/centrifuge"
 )
 
+type UserMessage struct {
+	Type string `json:"type"`
+}
+
+type SnakeDirectionMessage struct {
+	Direction game.Direction `json:"direction"`
+}
+
 const RoomPrefix = "room:"
 
-func HandleConnection(node *centrifuge.Node) {
+func HandleConnection(node *centrifuge.Node, list game.RoomList) {
 	node.OnConnecting(func(ctx context.Context, e centrifuge.ConnectEvent) (centrifuge.ConnectReply, error) {
 		dataType := struct {
 			UserID string `json:"user_id"`
@@ -45,6 +55,46 @@ func HandleConnection(node *centrifuge.Node) {
 					Data: []byte(`{"msg": "welcome"}`),
 				},
 			}, nil)
+		})
+
+		client.OnPublish(func(event centrifuge.PublishEvent, callback centrifuge.PublishCallback) {
+			log.Printf("[user %s] publishes into channel %s: %s", client.UserID(), event.Channel, string(event.Data))
+
+			if !client.IsSubscribed(event.Channel) {
+				callback(centrifuge.PublishReply{}, centrifuge.ErrorPermissionDenied)
+				return
+			}
+
+			var msg UserMessage
+			err := json.Unmarshal(event.Data, &msg)
+			if err != nil {
+				log.Printf("[user %s] error: %s", client.UserID(), err)
+				callback(centrifuge.PublishReply{}, centrifuge.ErrorInternal)
+				return
+			}
+
+			switch msg.Type {
+			case "snake_move":
+				{
+					var msg SnakeDirectionMessage
+					if err = json.Unmarshal(event.Data, &msg); err != nil {
+						log.Printf("[user %s] error: %s", client.UserID(), err)
+						callback(centrifuge.PublishReply{}, centrifuge.ErrorInternal)
+						return
+					}
+
+					roomId := strings.TrimPrefix(event.Channel, RoomPrefix)
+					room, ok := list[roomId]
+					if !ok {
+						log.Printf("[user %s] error. Room not found: %s", client.UserID(), err)
+						callback(centrifuge.PublishReply{}, centrifuge.ErrorInternal)
+						return
+					}
+					snake := room.Snakes[client.UserID()]
+					snake.SetDirection(msg.Direction)
+				}
+			}
+
 		})
 	})
 }

@@ -28,6 +28,7 @@ type Snake struct {
 	direction Direction
 	userID    string
 	color     Color
+	dead      bool
 }
 
 type SnakeView struct {
@@ -56,6 +57,30 @@ func (s *Snake) Move(ateFruit bool, sizeX, sizeY int64) (head *Point, tail *Poin
 		s.points = s.points[1:]
 	}
 	return head, tail, nil
+}
+
+func (s *Snake) SetDirection(direction Direction) {
+	if direction == UP && s.direction == DOWN {
+		return
+	}
+	if direction == LEFT && s.direction == RIGHT {
+		return
+	}
+	if direction == RIGHT && s.direction == LEFT {
+		return
+	}
+	if direction == DOWN && s.direction == UP {
+		return
+	}
+	s.direction = direction
+}
+
+func (s *Snake) Die() {
+	s.dead = true
+}
+
+func (s *Snake) IsDead() bool {
+	return s.dead
 }
 
 // NextHead Получение следующего места головы змейки

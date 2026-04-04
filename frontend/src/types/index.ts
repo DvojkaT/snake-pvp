@@ -4,6 +4,13 @@ export const objectTypes = {
   snakePart: 2,
 } as const;
 
+export const directions = {
+  up: 0,
+  down: 1,
+  left: 2,
+  right: 3,
+} as const;
+
 export type Cell = {
   object: number,
   snake: Snake,

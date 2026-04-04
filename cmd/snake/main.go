@@ -24,11 +24,13 @@ func main() {
 		log.Fatal(err)
 	}
 
+	list := game.NewRoomList()
+
 	api.HandleRoutes(r, node)
-	ws.HandleConnection(node)
+	ws.HandleConnection(node, list)
 
 	// Заглушка
-	room := game.NewRoom(50, 50, 4)
+	room := game.NewRoom(list, 50, 50, 4)
 	player := game.NewLobbyPlayer("testPlayerId", "Test player")
 	room.Players[player.ID] = *player
 
