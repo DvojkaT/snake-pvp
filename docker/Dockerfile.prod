@@ -1,8 +1,6 @@
 
 FROM oven/bun:1-alpine AS frontend
 COPY frontend /app
-#TODO костыль
-COPY .env /
 WORKDIR /app
 RUN bun run build --outDir ./dist
 
