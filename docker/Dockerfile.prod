@@ -1,0 +1,18 @@
+
+FROM oven/bun:1-alpine AS frontend
+COPY frontend /app
+#TODO костыль
+COPY .env /
+WORKDIR /app
+RUN bun run build --outDir ./dist
+
+FROM golang:1.26.1-alpine3.23 AS backend
+COPY . /app
+WORKDIR /app
+COPY --from=frontend /app/dist ./cmd/snake/static
+RUN go mod download -x
+RUN go build -o main ./cmd/snake/main.go
+
+FROM alpine:3.23
+COPY --from=backend /app/main main
+CMD ["/main"]

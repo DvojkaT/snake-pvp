@@ -19,7 +19,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: '../static/web',
+    outDir: '../cmd/snake/static',
     emptyOutDir: true,
   }
 })

@@ -1,7 +1,10 @@
 package api
 
 import (
+	"embed"
 	"fmt"
+	"io/fs"
+	"log"
 	"net/http"
 	"snake/internal/game"
 	"snake/internal/ws"
@@ -10,7 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func HandleRoutes(r *gin.Engine, node *centrifuge.Node, roomsList game.RoomList) {
+func HandleRoutes(r *gin.Engine, node *centrifuge.Node, FS *embed.FS, roomsList game.RoomList) {
 	websocketHandler := centrifuge.NewWebsocketHandler(node, centrifuge.WebsocketConfig{
 		CheckOrigin: func(r *http.Request) bool {
 			return true //todo
@@ -31,6 +34,21 @@ func HandleRoutes(r *gin.Engine, node *centrifuge.Node, roomsList game.RoomList)
 	})
 	r.GET("/health", func(c *gin.Context) {
 		OK(c, gin.H{"message": "ok"})
+	})
+
+	sub, err := fs.Sub(FS, "static/assets")
+	if err != nil {
+		log.Fatal(err)
+	}
+	r.StaticFS("/assets", http.FS(sub))
+
+	r.NoRoute(func(c *gin.Context) {
+		data, err := FS.ReadFile("static/index.html")
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+		c.Data(http.StatusOK, "text/html; charset=utf-8", data)
 	})
 }
 

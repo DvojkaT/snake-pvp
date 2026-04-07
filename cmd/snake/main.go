@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"log"
 	"os"
 	"snake/internal/api"
@@ -13,6 +14,9 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
+
+//go:embed static
+var FS embed.FS
 
 func main() {
 	r := gin.Default()
@@ -42,7 +46,7 @@ func main() {
 
 	list := game.NewRoomList()
 
-	api.HandleRoutes(r, node, list)
+	api.HandleRoutes(r, node, &FS, list)
 	ws.HandleConnection(node, list)
 
 	go func() {
