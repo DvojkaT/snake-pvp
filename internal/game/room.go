@@ -3,6 +3,7 @@ package game
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"time"
 
 	"github.com/google/uuid"
@@ -26,14 +27,16 @@ type RoomList map[string]*Room
 func NewRoomList() RoomList { return make(map[string]*Room) }
 
 type Room struct {
-	ID           string
-	Snakes       map[string]*Snake
-	Players      map[string]LobbyPlayer
-	Status       status
-	Cells        [][]Cell
-	PlayersLimit int64
-	stopTimer    chan bool
-	ViewState    chan *RoomView
+	ID            string
+	Snakes        map[string]*Snake
+	Players       map[string]LobbyPlayer
+	Status        status
+	Cells         [][]Cell
+	PlayersLimit  int64
+	stopTimer     chan bool
+	ViewState     chan *RoomView
+	maxFruits     int8
+	currentFruits int8
 }
 
 type RoomView struct {
@@ -144,13 +147,34 @@ func (r *Room) StartGame() error {
 		index++
 	}
 
-	r.Cells[10][10].object = Fruit
-	r.Cells[20][10].object = Fruit
-	r.Cells[30][10].object = Fruit
+	for _ = range r.Snakes {
+		r.spawnFruit()
+	}
 
 	r.Status = ACTIVE
 
 	return nil
+}
+
+func (r *Room) spawnFruit() {
+	var freeCells []*Point
+
+	for indexX := range r.Cells {
+		for indexY, cell := range r.Cells[indexX] {
+			if cell.object == Empty {
+				freeCells = append(freeCells, newPoint(int64(indexX), int64(indexY)))
+			}
+		}
+	}
+
+	if len(freeCells) == 0 {
+		return
+	}
+
+	freeCell := freeCells[rand.Intn(len(freeCells))]
+
+	r.Cells[freeCell.x][freeCell.y].object = Fruit
+	r.currentFruits++
 }
 
 // todo В будущем пересмотреть логику расставления чтобы можно было иметь 4+ игроков
@@ -248,8 +272,11 @@ func (r *Room) nextTick() error {
 		switch r.Cells[snakeNextHead.x][snakeNextHead.y].object {
 		case Fruit:
 			withFruit = true
+			r.currentFruits--
+			r.spawnFruit()
 		case SnakePart:
 			r.snakeLose(snake)
+			r.maxFruits--
 			continue
 		case Empty:
 		default:
