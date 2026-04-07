@@ -9,11 +9,19 @@ import (
 	"time"
 
 	"github.com/centrifugal/centrifuge"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
 	r := gin.Default()
+
+	corsConfig := cors.Config{
+		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders: []string{"Origin", "Content-Type", "Authorization"},
+	}
+	corsConfig.AllowAllOrigins = true
+	r.Use(cors.New(corsConfig))
 
 	node, err := centrifuge.New(centrifuge.Config{
 		LogLevel:       centrifuge.LogLevelInfo,
@@ -26,20 +34,11 @@ func main() {
 
 	list := game.NewRoomList()
 
-	api.HandleRoutes(r, node)
+	api.HandleRoutes(r, node, list)
 	ws.HandleConnection(node, list)
 
 	// Заглушка
 	room := game.NewRoom(list, 50, 50, 4)
-	player := game.NewLobbyPlayer("testPlayerId", "Test player")
-	room.Players[player.ID] = *player
-
-	err = room.StartGame()
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("game %s started\n", room.ID)
-	room.StartTicker()
 
 	go func() {
 		for {

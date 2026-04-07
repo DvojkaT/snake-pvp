@@ -208,7 +208,7 @@ func (r *Room) setSnakePosition(index int, userID string) *Snake {
 }
 
 func (r *Room) StartTicker() {
-	ticker := time.NewTicker(time.Second / 6)
+	ticker := time.NewTicker(time.Second / 7)
 	go func() {
 		defer ticker.Stop()
 		for {

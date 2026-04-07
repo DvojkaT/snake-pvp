@@ -5,6 +5,7 @@ import {connect} from "@/lib/ws.ts";
 import {renderCanvas} from "@/lib/render.ts";
 import {type CellSub, directions} from "@/types";
 import {Subscription} from "centrifuge";
+import {getAuth} from "@/lib/auth.ts";
 
 const canvasRef = ref<HTMLCanvasElement>();
 const sub = ref<Subscription | null>(null)
@@ -34,7 +35,7 @@ onMounted(() => {
     return
   }
 
-  const {sub: subscription} = connect("room:test-game-id")
+  const {sub: subscription} = connect("room:test-game-id", getAuth())
   sub.value = subscription
 
   const ctx = canvasRef.value.getContext("2d");
