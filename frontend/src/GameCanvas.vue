@@ -9,6 +9,10 @@ import {getAuth} from "@/lib/auth.ts";
 
 const canvasRef = ref<HTMLCanvasElement>();
 const sub = ref<Subscription | null>(null)
+const props = defineProps<{
+  uuid: string
+}>()
+const emit = defineEmits(['gameStarted'])
 
 const handleKeyDown = (event: KeyboardEvent) => {
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
@@ -35,7 +39,7 @@ onMounted(() => {
     return
   }
 
-  const {sub: subscription} = connect("room:test-game-id", getAuth())
+  const {sub: subscription} = connect(`room:${props.uuid}`, getAuth())
   sub.value = subscription
 
   const ctx = canvasRef.value.getContext("2d");
@@ -49,6 +53,7 @@ onMounted(() => {
   canvasRef.value.height = 50 * cellSize;
 
   sub.value.on('publication', function (data: CellSub) {
+    emit('gameStarted')
     renderCanvas(ctx, data.data.cells, cellSize);
   });
 

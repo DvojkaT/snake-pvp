@@ -90,7 +90,12 @@ func HandleConnection(node *centrifuge.Node, list game.RoomList) {
 						callback(centrifuge.PublishReply{}, centrifuge.ErrorInternal)
 						return
 					}
-					snake := room.Snakes[client.UserID()]
+					snake, ok := room.Snakes[client.UserID()]
+					if !ok {
+						log.Printf("[user %s] error. Snake not found: %s", client.UserID(), err)
+						callback(centrifuge.PublishReply{}, centrifuge.ErrorInternal)
+						return
+					}
 					snake.SetDirection(msg.Direction)
 				}
 			}

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type status int64
@@ -80,7 +82,7 @@ func NewRoom(list RoomList, sizeX, sizeY, playersLimit int64) *Room {
 	}
 
 	room := &Room{
-		ID:           "test-game-id", //todo uuid.NewString()
+		ID:           uuid.NewString(),
 		Snakes:       map[string]*Snake{},
 		Players:      map[string]LobbyPlayer{},
 		Status:       LOBBY,
@@ -91,6 +93,8 @@ func NewRoom(list RoomList, sizeX, sizeY, playersLimit int64) *Room {
 	}
 
 	list[room.ID] = room
+
+	fmt.Printf("New room %s\n", room.ID)
 
 	return room
 }

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"snake/internal/api"
 	"snake/internal/game"
@@ -36,21 +35,6 @@ func main() {
 
 	api.HandleRoutes(r, node, list)
 	ws.HandleConnection(node, list)
-
-	// Заглушка
-	room := game.NewRoom(list, 50, 50, 4)
-
-	go func() {
-		for {
-			data := <-room.ViewState
-			err := ws.PublishRoomState(node, data)
-			if err != nil {
-				fmt.Printf("Error publishing room state: %v\n", err)
-			}
-		}
-	}()
-
-	// Вот по сюда
 
 	go func() {
 		err = node.Run()

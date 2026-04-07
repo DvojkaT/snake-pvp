@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"snake/internal/game"
+	"snake/internal/ws"
 
 	"github.com/centrifugal/centrifuge"
 	"github.com/gin-gonic/gin"
@@ -24,6 +25,9 @@ func HandleRoutes(r *gin.Engine, node *centrifuge.Node, roomsList game.RoomList)
 	})
 	r.POST("/:gameId/start", func(c *gin.Context) {
 		startGame(c, roomsList)
+	})
+	r.POST("/create", func(c *gin.Context) {
+		createRoom(c, node, roomsList)
 	})
 	r.GET("/health", func(c *gin.Context) {
 		OK(c, gin.H{"message": "ok"})
@@ -60,5 +64,20 @@ func startGame(c *gin.Context, roomsList game.RoomList) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "could not start game"})
 	}
 	room.StartTicker()
-	OK(c, gin.H{"message": "ok"}) //todo Добавить вывод цвета //
+	OK(c, gin.H{"message": "ok"})
+}
+
+func createRoom(c *gin.Context, node *centrifuge.Node, roomsList game.RoomList) {
+	room := game.NewRoom(roomsList, 50, 50, 4)
+
+	go func() {
+		for {
+			data := <-room.ViewState
+			err := ws.PublishRoomState(node, data)
+			if err != nil {
+				fmt.Printf("Error publishing room state: %v\n", err)
+			}
+		}
+	}()
+	OK(c, gin.H{"uuid": room.ID})
 }
