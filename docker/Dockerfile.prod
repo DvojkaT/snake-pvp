@@ -2,7 +2,7 @@
 FROM oven/bun:1-alpine AS frontend
 COPY frontend /app
 WORKDIR /app
-RUN bun run build --outDir ./dist
+RUN bun run build -- --outDir ./dist
 
 FROM golang:1.26.1-alpine3.23 AS backend
 COPY . /app
