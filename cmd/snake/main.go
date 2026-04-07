@@ -32,7 +32,6 @@ func main() {
 		corsConfig.AllowOrigins = strings.Split(corsOrigin, ",")
 		corsConfig.AllowCredentials = true
 	}
-	corsConfig.AllowAllOrigins = true
 	r.Use(cors.New(corsConfig))
 
 	node, err := centrifuge.New(centrifuge.Config{
