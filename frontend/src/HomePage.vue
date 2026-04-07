@@ -5,6 +5,7 @@ import axios from "axios";
 import {useRouter} from "vue-router";
 
 const router = useRouter();
+const siteUrl = import.meta.env.VITE_API_URL
 
 const name = ref<string>(getName())
 const joinGameUuid = ref<string>()
@@ -20,7 +21,7 @@ function setUsername() {
 
 async function createGame() {
   try {
-    const {data: {data}} = await axios.post(`http://127.0.0.1:8080/create`);
+    const {data: {data}} = await axios.post(`${siteUrl}/create`);
     return router.push(`/${data.uuid}`)
   } catch (error) {
     console.error(error);
@@ -31,7 +32,7 @@ async function createGame() {
 async function checkRoom() {
   connectionError.value = null;
   const formData = ref({user_id: getAuth(), name: getName()});
-  axios.post(`http://127.0.0.1:8080/${joinGameUuid.value}/join`, formData.value).then(() => {
+  axios.post(`${siteUrl}/${joinGameUuid.value}/join`, formData.value).then(() => {
     return router.push(`/${joinGameUuid.value}`);
   }).catch(error => {
     console.error(error);

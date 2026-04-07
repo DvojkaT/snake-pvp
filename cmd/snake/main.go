@@ -2,9 +2,11 @@ package main
 
 import (
 	"log"
+	"os"
 	"snake/internal/api"
 	"snake/internal/game"
 	"snake/internal/ws"
+	"strings"
 	"time"
 
 	"github.com/centrifugal/centrifuge"
@@ -15,9 +17,16 @@ import (
 func main() {
 	r := gin.Default()
 
+	corsOrigin := os.Getenv("CORS_ALLOW_ORIGIN")
 	corsConfig := cors.Config{
 		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders: []string{"Origin", "Content-Type", "Authorization"},
+	}
+	if corsOrigin == "*" || corsOrigin == "" {
+		corsConfig.AllowAllOrigins = true
+	} else {
+		corsConfig.AllowOrigins = strings.Split(corsOrigin, ",")
+		corsConfig.AllowCredentials = true
 	}
 	corsConfig.AllowAllOrigins = true
 	r.Use(cors.New(corsConfig))

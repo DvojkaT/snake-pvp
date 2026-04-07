@@ -7,6 +7,7 @@ import axios from "axios";
 
 const route = useRoute()
 const router = useRouter()
+const siteUrl = import.meta.env.VITE_API_URL
 
 const uuid = getAuth()
 const gameUuid = route.params.gameId as string
@@ -23,7 +24,7 @@ onMounted(() => {
 async function join() {
   const formData = ref({user_id: getAuth(), name: getName()});
   try {
-    return await axios.post(`http://127.0.0.1:8080/${gameUuid}/join`, formData.value);
+    return await axios.post(`${siteUrl}/${gameUuid}/join`, formData.value);
   } catch (error) {
     console.error(error);
     return router.push("/");
@@ -32,7 +33,7 @@ async function join() {
 
 async function start() {
   try {
-    return await axios.post(`http://127.0.0.1:8080/${gameUuid}/start`);
+    return await axios.post(`${siteUrl}/${gameUuid}/start`);
   } catch (error) {
     console.error(error);
   }
