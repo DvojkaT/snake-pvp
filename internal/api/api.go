@@ -60,13 +60,14 @@ func joinGame(c *gin.Context, roomsList game.RoomList) {
 	gameId := c.Param("gameId")
 	if err := c.ShouldBindJSON(&joinGameRequest); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 	room, ok := roomsList[gameId]
 	if !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid game id"})
+		return
 	}
-	player := game.NewLobbyPlayer(joinGameRequest.UserId, joinGameRequest.Name)
-	room.Players[player.ID] = *player
+	_ = room.AddPlayer(joinGameRequest.UserId, joinGameRequest.Name)
 	OK(c, gin.H{"message": "ok"}) //todo Добавить вывод цвета
 }
 
@@ -75,11 +76,13 @@ func startGame(c *gin.Context, roomsList game.RoomList) {
 	room, ok := roomsList[gameId]
 	if !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid game id"})
+		return
 	}
 	err := room.StartGame()
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "could not start game"})
+		return
 	}
 	room.StartTicker()
 	OK(c, gin.H{"message": "ok"})
@@ -90,10 +93,23 @@ func createRoom(c *gin.Context, node *centrifuge.Node, roomsList game.RoomList) 
 
 	go func() {
 		for {
-			data := <-room.ViewState
-			err := ws.PublishRoomState(node, data)
-			if err != nil {
-				fmt.Printf("Error publishing room state: %v\n", err)
+			select {
+			case data := <-room.ViewState:
+				{
+					err := ws.PublishRoomState(node, data)
+					if err != nil {
+						fmt.Printf("Error publishing room state: %v\n", err)
+					}
+				}
+			case data := <-room.LobbyState:
+				{
+					err := ws.PublishLobbyState(node, room.ID, data)
+					if err != nil {
+						fmt.Printf("Error publishing room state: %v\n", err)
+					}
+				}
+			case <-room.StopTimer:
+				return
 			}
 		}
 	}()

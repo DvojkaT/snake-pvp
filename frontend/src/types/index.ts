@@ -20,8 +20,13 @@ export type Snake = {
   color: string
 }
 
+// todo Переименовть
 export type CellSub = {
   data: {
-    cells: Cell[][]
+    data: {
+      cells?: Cell[][]
+      players: string[]
+    }
+    event: string
   }
 }

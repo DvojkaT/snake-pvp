@@ -12,7 +12,7 @@ const sub = ref<Subscription | null>(null)
 const props = defineProps<{
   uuid: string
 }>()
-const emit = defineEmits(['gameStarted'])
+const emit = defineEmits(['gameStarted', 'setPlayers'])
 
 const handleKeyDown = (event: KeyboardEvent) => {
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
@@ -53,8 +53,13 @@ onMounted(() => {
   canvasRef.value.height = 50 * cellSize;
 
   sub.value.on('publication', function (data: CellSub) {
-    emit('gameStarted')
-    renderCanvas(ctx, data.data.cells, cellSize);
+    if(data.data.event === "room_state") {
+      emit('gameStarted')
+      renderCanvas(ctx, data.data.data.cells, cellSize);
+    }
+    if (data.data.event === "lobby_state") {
+      emit('setPlayers', data.data.data.players)
+    }
   });
 
   window.addEventListener('keydown', handleKeyDown);

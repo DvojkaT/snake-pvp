@@ -105,12 +105,33 @@ func HandleConnection(node *centrifuge.Node, list game.RoomList) {
 }
 
 func PublishRoomState(node *centrifuge.Node, room *game.RoomView) error {
-	data, err := json.Marshal(room)
+	data, err := json.Marshal(map[string]interface{}{
+		"event": "room_state",
+		"data":  room,
+	})
 	if err != nil {
 		return err
 	}
 
 	_, err = node.Publish(RoomPrefix+room.ID, data)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// todo Пересмотреть, может стоит изменить на отдельные сообщения
+func PublishLobbyState(node *centrifuge.Node, roomId string, lobbyView *game.LobbyView) error {
+	data, err := json.Marshal(map[string]interface{}{
+		"event": "lobby_state",
+		"data":  lobbyView,
+	})
+	if err != nil {
+		return err
+	}
+
+	_, err = node.Publish(RoomPrefix+roomId, data)
 	if err != nil {
 		return err
 	}

@@ -33,7 +33,8 @@ type Room struct {
 	Status        status
 	Cells         [][]Cell
 	PlayersLimit  int64
-	stopTimer     chan bool
+	StopTimer     chan bool
+	LobbyState    chan *LobbyView
 	ViewState     chan *RoomView
 	maxFruits     int8
 	currentFruits int8
@@ -71,6 +72,16 @@ func NewRoomView(room *Room) *RoomView {
 	}
 }
 
+type LobbyView struct {
+	Players map[string]LobbyPlayer `json:"players"`
+}
+
+func NewLobbyView(players map[string]LobbyPlayer) *LobbyView {
+	return &LobbyView{
+		Players: players,
+	}
+}
+
 func NewLobbyPlayer(uuid, name string) *LobbyPlayer {
 	return &LobbyPlayer{
 		ID:   uuid,
@@ -91,8 +102,9 @@ func NewRoom(list RoomList, sizeX, sizeY, playersLimit int64) *Room {
 		Status:       LOBBY,
 		Cells:        cells,
 		PlayersLimit: playersLimit,
-		stopTimer:    make(chan bool),
+		StopTimer:    make(chan bool),
 		ViewState:    make(chan *RoomView, 1),
+		LobbyState:   make(chan *LobbyView, 1),
 	}
 
 	list[room.ID] = room
@@ -116,12 +128,12 @@ func (r *Room) AddPlayer(ID, name string) error {
 		return PlayersLimitError
 	}
 
-	player := LobbyPlayer{
-		ID,
-		name,
-	}
+	player := NewLobbyPlayer(ID, name)
 
-	r.Players[ID] = player
+	r.Players[player.ID] = *player
+
+	fmt.Printf("Added player %s\n", player.ID)
+	r.LobbyState <- NewLobbyView(r.Players)
 
 	return nil
 }
@@ -241,7 +253,7 @@ func (r *Room) StartTicker() {
 		defer ticker.Stop()
 		for {
 			select {
-			case <-r.stopTimer:
+			case <-r.StopTimer:
 				return
 			case <-ticker.C:
 				err := r.nextTick()
@@ -256,7 +268,7 @@ func (r *Room) StartTicker() {
 }
 
 func (r *Room) endGame() {
-	close(r.stopTimer)
+	close(r.StopTimer)
 	r.Status = END
 	fmt.Printf("game %s ended\n", r.ID)
 }

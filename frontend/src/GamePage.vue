@@ -15,6 +15,8 @@ const gameUuid = route.params.gameId as string
 const isConnected = ref(false)
 const isGameStarted = ref(false)
 
+const playersList = ref<string[]>([])
+
 onMounted(() => {
   join().then(() => {
     isConnected.value = true
@@ -45,6 +47,10 @@ function exit() {
 
 function gameStarted() {
   isGameStarted.value = true
+}
+
+function setPlayersList(players: string[]) {
+  playersList.value = players
 }
 </script>
 
@@ -84,10 +90,22 @@ function gameStarted() {
       </div>
     </div>
   </div>
+  <div class="top-0 right-0 absolute">
+    <div class="bg-gray-300 shadow-lg border-gray-400 border flex flex-col rounded-2xl p-4 m-4">
+      <h3 class="text-xl font-bold text-center my-4">
+        Список игроков
+      </h3>
+      <div class="flex flex-col gap-4">
+        <ul class="flex flex-col">
+          <li v-for="player in playersList" class="text-nowrap">- {{ player.Name }}</li>
+        </ul>
+      </div>
+    </div>
+  </div>
   <div
     class="min-h-full min-w-full flex flex-col gap-10 items-center content-center justify-center mt-20">
     <h1 class="font-bold text-2xl">Змейка</h1>
-    <GameCanvas @game-started="gameStarted" :uuid="gameUuid"/>
+    <GameCanvas @set-players="setPlayersList" @game-started="gameStarted" :uuid="gameUuid"/>
   </div>
 </template>
 
