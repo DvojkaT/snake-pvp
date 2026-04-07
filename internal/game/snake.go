@@ -1,5 +1,7 @@
 package game
 
+import "math/rand"
+
 type Direction int64
 
 const (
@@ -22,6 +24,12 @@ const (
 	CYAN   Color = "#00FFFF"
 	BLACK  Color = "#000000"
 )
+
+var Colors = []Color{RED, BLUE, YELLOW, GREEN, PINK, CYAN, BLACK}
+
+func randomColor() Color {
+	return Colors[rand.Intn(len(Colors))]
+}
 
 type Snake struct {
 	points    []Point

@@ -5,7 +5,7 @@ export function renderCanvas(ctx: CanvasRenderingContext2D, cells: Cell[][], cel
     for (let y = 0; y < cells[x]!.length; y++) {
       switch (cells[x]![y]!.object) {
         case objectTypes.snakePart: {
-          ctx.fillStyle = '#000000';
+          ctx.fillStyle = cells[x]![y]!.snake.color;
           ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
           break;
         }

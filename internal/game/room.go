@@ -154,7 +154,7 @@ func (r *Room) setSnakePosition(index int, userID string) *Snake {
 	switch index {
 	case 0:
 		{
-			snake := newSnake([]Point{}, DOWN, userID, RED)
+			snake := newSnake([]Point{}, DOWN, userID, randomColor())
 			for p := 0; p < SnakeSize; p++ {
 				point := newPoint(0, int64(p))
 				r.Cells[0][p] = *NewCell(SnakePart, snake)
@@ -165,7 +165,7 @@ func (r *Room) setSnakePosition(index int, userID string) *Snake {
 		}
 	case 1:
 		{
-			snake := newSnake([]Point{}, DOWN, userID, RED)
+			snake := newSnake([]Point{}, DOWN, userID, randomColor())
 			lastX := len(r.Cells) - 1
 			for p := 0; p < SnakeSize; p++ {
 				point := newPoint(int64(lastX), int64(p))
@@ -177,7 +177,7 @@ func (r *Room) setSnakePosition(index int, userID string) *Snake {
 		}
 	case 2:
 		{
-			snake := newSnake([]Point{}, UP, userID, RED)
+			snake := newSnake([]Point{}, UP, userID, randomColor())
 			lastY := len(r.Cells[0]) - 1
 			for p := lastY; p >= lastY-SnakeSize+1; p-- {
 				point := newPoint(int64(0), int64(p))
@@ -190,7 +190,7 @@ func (r *Room) setSnakePosition(index int, userID string) *Snake {
 	case 3:
 		{
 			{
-				snake := newSnake([]Point{}, UP, userID, RED)
+				snake := newSnake([]Point{}, UP, userID, randomColor())
 				lastX := len(r.Cells) - 1
 				lastY := len(r.Cells[0]) - 1
 				for p := lastY; p >= lastY-SnakeSize+1; p-- {
