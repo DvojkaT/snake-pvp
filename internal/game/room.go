@@ -184,7 +184,7 @@ func (r *Room) setSnakePosition(index int, userID string) *Snake {
 		{
 			snake := newSnake([]Point{}, DOWN, userID, randomColor())
 			for p := 0; p < SnakeSize; p++ {
-				point := newPoint(0, int64(p))
+				point := newPoint(1, int64(p))
 				r.Cells[0][p] = *NewCell(SnakePart, snake)
 				snake.points = append(snake.points, *point)
 			}
@@ -194,7 +194,7 @@ func (r *Room) setSnakePosition(index int, userID string) *Snake {
 	case 1:
 		{
 			snake := newSnake([]Point{}, DOWN, userID, randomColor())
-			lastX := len(r.Cells) - 1
+			lastX := len(r.Cells) - 2
 			for p := 0; p < SnakeSize; p++ {
 				point := newPoint(int64(lastX), int64(p))
 				r.Cells[lastX][p] = *NewCell(SnakePart, snake)
@@ -206,7 +206,7 @@ func (r *Room) setSnakePosition(index int, userID string) *Snake {
 	case 2:
 		{
 			snake := newSnake([]Point{}, UP, userID, randomColor())
-			lastY := len(r.Cells[0]) - 1
+			lastY := len(r.Cells[0]) - 2
 			for p := lastY; p >= lastY-SnakeSize+1; p-- {
 				point := newPoint(int64(0), int64(p))
 				r.Cells[0][p] = *NewCell(SnakePart, snake)
@@ -219,7 +219,7 @@ func (r *Room) setSnakePosition(index int, userID string) *Snake {
 		{
 			{
 				snake := newSnake([]Point{}, UP, userID, randomColor())
-				lastX := len(r.Cells) - 1
+				lastX := len(r.Cells) - 2
 				lastY := len(r.Cells[0]) - 1
 				for p := lastY; p >= lastY-SnakeSize+1; p-- {
 					point := newPoint(int64(lastX), int64(p))
@@ -255,8 +255,10 @@ func (r *Room) StartTicker() {
 	}()
 }
 
-func (r *Room) StopTicker() {
+func (r *Room) endGame() {
 	close(r.stopTimer)
+	r.Status = END
+	fmt.Printf("game %s ended\n", r.ID)
 }
 
 // nextTick Обработка тика каждый n времени
@@ -277,6 +279,9 @@ func (r *Room) nextTick() error {
 		case SnakePart:
 			r.snakeLose(snake)
 			r.maxFruits--
+			if len(r.Snakes) == 0 {
+				r.endGame()
+			}
 			continue
 		case Empty:
 		default:
