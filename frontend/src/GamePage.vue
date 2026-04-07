@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import GameCanvas from "@/GameCanvas.vue";
-import {getAuth} from "@/lib/auth.ts";
+import {getAuth, getName} from "@/lib/auth.ts";
 import {useRoute} from "vue-router";
 import {onMounted, ref} from "vue";
 import axios from "axios";
@@ -18,7 +18,7 @@ onMounted(() => {
 })
 
 async function join() {
-  const formData = ref({user_id: getAuth(), name: "test-name"});
+  const formData = ref({user_id: getAuth(), name: getName()});
   try {
     return await axios.post(`http://127.0.0.1:8080/${gameUuid}/join`, formData.value);
   } catch (error) {
