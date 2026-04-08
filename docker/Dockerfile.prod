@@ -11,8 +11,8 @@ COPY . /app
 WORKDIR /app
 COPY --from=frontend /cmd/snake/static ./cmd/snake/static
 RUN go mod download -x
-RUN go build -o main ./cmd/snake/main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o main ./cmd/snake/main.go
 
-FROM alpine:3.23
+FROM scratch
 COPY --from=backend /app/main main
 CMD ["/main"]
