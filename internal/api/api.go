@@ -67,7 +67,11 @@ func joinGame(c *gin.Context, roomsList game.RoomList) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid game id"})
 		return
 	}
-	_ = room.AddPlayer(joinGameRequest.UserId, joinGameRequest.Name)
+	err := room.AddPlayer(joinGameRequest.UserId, joinGameRequest.Name)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "error"})
+		return
+	}
 	OK(c, gin.H{"message": "ok"}) //todo Добавить вывод цвета
 }
 

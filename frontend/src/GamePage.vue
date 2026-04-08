@@ -97,7 +97,7 @@ function setPlayersList(players: string[]) {
       </h3>
       <div class="flex flex-col gap-4">
         <ul class="flex flex-col">
-          <li v-for="player in playersList" class="text-nowrap">- {{ player.Name }}</li>
+          <li v-for="player in playersList" class="text-nowrap">- {{ player.name }}</li>
         </ul>
       </div>
     </div>

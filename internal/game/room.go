@@ -18,8 +18,8 @@ const (
 )
 
 type LobbyPlayer struct {
-	ID   string
-	Name string
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
 type RoomList map[string]*Room
@@ -38,6 +38,7 @@ type Room struct {
 	ViewState     chan *RoomView
 	maxFruits     int8
 	currentFruits int8
+	roomList      *RoomList
 }
 
 type RoomView struct {
@@ -74,11 +75,13 @@ func NewRoomView(room *Room) *RoomView {
 
 type LobbyView struct {
 	Players map[string]LobbyPlayer `json:"players"`
+	Winner  *LobbyPlayer           `json:"winner"`
 }
 
-func NewLobbyView(players map[string]LobbyPlayer) *LobbyView {
+func NewLobbyView(players map[string]LobbyPlayer, winner *LobbyPlayer) *LobbyView {
 	return &LobbyView{
 		Players: players,
+		Winner:  winner,
 	}
 }
 
@@ -105,6 +108,7 @@ func NewRoom(list RoomList, sizeX, sizeY, playersLimit int64) *Room {
 		StopTimer:    make(chan bool),
 		ViewState:    make(chan *RoomView, 1),
 		LobbyState:   make(chan *LobbyView, 1),
+		roomList:     &list,
 	}
 
 	list[room.ID] = room
@@ -119,21 +123,20 @@ func (r *Room) AddPlayer(ID, name string) error {
 		return GameIsActiveError
 	}
 
-	_, ok := r.Players[ID]
-	if ok {
-		return UserAlreadyExistsError
+	_, exists := r.Players[ID]
+
+	if !exists {
+		if len(r.Players) >= int(r.PlayersLimit) {
+			return PlayersLimitError
+		}
+
+		player := NewLobbyPlayer(ID, name)
+
+		r.Players[player.ID] = *player
+
+		fmt.Printf("Added player %s\n", player.ID)
+		r.LobbyState <- NewLobbyView(r.Players, nil)
 	}
-
-	if len(r.Players) >= int(r.PlayersLimit) {
-		return PlayersLimitError
-	}
-
-	player := NewLobbyPlayer(ID, name)
-
-	r.Players[player.ID] = *player
-
-	fmt.Printf("Added player %s\n", player.ID)
-	r.LobbyState <- NewLobbyView(r.Players)
 
 	return nil
 }
@@ -155,6 +158,7 @@ func (r *Room) StartGame() error {
 	}
 
 	for player, _ := range r.Players {
+		fmt.Printf("Setting snake for %s\n", player)
 		r.Snakes[player] = r.setSnakePosition(index, player)
 		index++
 	}
@@ -197,7 +201,7 @@ func (r *Room) setSnakePosition(index int, userID string) *Snake {
 			snake := newSnake([]Point{}, DOWN, userID, randomColor())
 			for p := 0; p < SnakeSize; p++ {
 				point := newPoint(1, int64(p))
-				r.Cells[0][p] = *NewCell(SnakePart, snake)
+				r.Cells[1][p] = *NewCell(SnakePart, snake)
 				snake.points = append(snake.points, *point)
 			}
 
@@ -268,8 +272,15 @@ func (r *Room) StartTicker() {
 }
 
 func (r *Room) endGame() {
-	close(r.StopTimer)
 	r.Status = END
+	var winner LobbyPlayer
+	for userId, _ := range r.Snakes {
+		winner = r.Players[userId]
+		break
+	}
+	r.LobbyState <- NewLobbyView(r.Players, &winner)
+	close(r.StopTimer)
+	delete(*r.roomList, r.ID)
 	fmt.Printf("game %s ended\n", r.ID)
 }
 
@@ -291,7 +302,7 @@ func (r *Room) nextTick() error {
 		case SnakePart:
 			r.snakeLose(snake)
 			r.maxFruits--
-			if len(r.Snakes) == 0 {
+			if len(r.Snakes) <= 1 {
 				r.endGame()
 			}
 			continue
