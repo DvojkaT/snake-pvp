@@ -1,12 +1,13 @@
 <script setup lang="ts">
 
-import {onMounted, onUnmounted, ref} from "vue";
+import {onMounted, onUnmounted, ref, useTemplateRef, watch} from "vue";
 import {connect} from "@/lib/ws.ts";
 import {renderCanvas} from "@/lib/render.ts";
 import {type CellSub, directions} from "@/types";
 import {Subscription} from "centrifuge";
 import {getAuth} from "@/lib/auth.ts";
 import {useRouter} from "vue-router";
+import {useSwipe} from "@vueuse/core";
 
 const canvasRef = ref<HTMLCanvasElement>();
 const sub = ref<Subscription | null>(null)
@@ -15,6 +16,7 @@ const props = defineProps<{
 }>()
 const emit = defineEmits(['gameStarted', 'setPlayers'])
 
+const {direction} = useSwipe(canvasRef)
 const winner = ref<string>()
 const router = useRouter()
 
@@ -38,8 +40,26 @@ const handleKeyDown = (event: KeyboardEvent) => {
   }
 }
 
+watch(direction, (newDirection) => {
+  switch (newDirection) {
+    case "up":
+      sub.value?.publish({type: "snake_move", direction: directions.up});
+      break;
+    case "down":
+      sub.value?.publish({type: "snake_move", direction: directions.down});
+      break;
+    case "left":
+      sub.value?.publish({type: "snake_move", direction: directions.left});
+      break;
+    case "right":
+      sub.value?.publish({type: "snake_move", direction: directions.right});
+      break;
+  }
+})
+
 onMounted(() => {
   if (canvasRef.value === undefined) {
+    console.log("Can't find canvas");
     return
   }
 
@@ -83,11 +103,11 @@ function toMain() {
 </script>
 
 <template>
-  <canvas ref="canvasRef" class="relative border w-[500px] h-[500px]">
+  <canvas ref="canvasRef" class="touch-none relative aspect-square w-full border md:w-[500px] md:h-[500px]">
   </canvas>
   <div v-show="winner" class="absolute flex w-full h-full flex-row items-center justify-center">
     <div
-      class="rounded-2xl w-[30%] h-[30%] bg-gray-50 border-1 shadow-2xl">
+      class="rounded-2xl w-[50%] md:w-[30%] h-[30%] bg-gray-50 border-1 shadow-2xl">
       <div class="p-4 flex flex-col gap-4">
         <span class="text-xl"> Победитель: {{ winner ?? "не найден" }}</span>
         <button @click.prevent="toMain"

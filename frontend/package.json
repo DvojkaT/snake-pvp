@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.2",
+    "@vueuse/core": "^14.2.1",
     "axios": "^1.14.0",
     "centrifuge": "^5.5.3",
     "tailwindcss": "^4.2.2",

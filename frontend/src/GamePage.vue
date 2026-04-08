@@ -55,7 +55,7 @@ function setPlayersList(players: string[]) {
 </script>
 
 <template>
-  <div class="top-0 absolute grid grid-cols-4">
+  <div class="md:top-0 md:absolute md:grid md:grid-cols-4">
     <div class="bg-gray-300 shadow-lg border-gray-400 border flex flex-col rounded-2xl p-4 m-4">
       <div class="border-b">
         <button @click.prevent="exit"
@@ -90,7 +90,12 @@ function setPlayersList(players: string[]) {
       </div>
     </div>
   </div>
-  <div class="top-0 right-0 absolute">
+  <div
+    class="min-h-full min-w-full flex flex-col gap-10 items-center content-center justify-center mt-20">
+    <h1 class="font-bold text-2xl">Змейка</h1>
+    <GameCanvas @set-players="setPlayersList" @game-started="gameStarted" :uuid="gameUuid"/>
+  </div>
+  <div class="md:top-0 md:right-0 md:absolute">
     <div class="bg-gray-300 shadow-lg border-gray-400 border flex flex-col rounded-2xl p-4 m-4">
       <h3 class="text-xl font-bold text-center my-4">
         Список игроков
@@ -101,11 +106,6 @@ function setPlayersList(players: string[]) {
         </ul>
       </div>
     </div>
-  </div>
-  <div
-    class="min-h-full min-w-full flex flex-col gap-10 items-center content-center justify-center mt-20">
-    <h1 class="font-bold text-2xl">Змейка</h1>
-    <GameCanvas @set-players="setPlayersList" @game-started="gameStarted" :uuid="gameUuid"/>
   </div>
 </template>
 
