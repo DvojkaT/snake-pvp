@@ -97,6 +97,7 @@ func HandleConnection(node *centrifuge.Node, list game.RoomList) {
 						return
 					}
 					snake.SetDirection(msg.Direction)
+					callback(centrifuge.PublishReply{Result: &centrifuge.PublishResult{}}, nil)
 				}
 			}
 

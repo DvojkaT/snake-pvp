@@ -74,14 +74,16 @@ func NewRoomView(room *Room) *RoomView {
 }
 
 type LobbyView struct {
-	Players map[string]LobbyPlayer `json:"players"`
-	Winner  *LobbyPlayer           `json:"winner"`
+	Players  map[string]LobbyPlayer `json:"players"`
+	StatusID *status                `json:"status_id"`
+	Winner   *LobbyPlayer           `json:"winner"`
 }
 
-func NewLobbyView(players map[string]LobbyPlayer, winner *LobbyPlayer) *LobbyView {
+func NewLobbyView(players map[string]LobbyPlayer, statusID *status, winner *LobbyPlayer) *LobbyView {
 	return &LobbyView{
-		Players: players,
-		Winner:  winner,
+		Players:  players,
+		StatusID: statusID,
+		Winner:   winner,
 	}
 }
 
@@ -135,7 +137,7 @@ func (r *Room) AddPlayer(ID, name string) error {
 		r.Players[player.ID] = *player
 
 		fmt.Printf("Added player %s\n", player.ID)
-		r.LobbyState <- NewLobbyView(r.Players, nil)
+		r.LobbyState <- NewLobbyView(r.Players, &r.Status, nil)
 	}
 
 	return nil
@@ -278,7 +280,7 @@ func (r *Room) endGame() {
 		winner = r.Players[userId]
 		break
 	}
-	r.LobbyState <- NewLobbyView(r.Players, &winner)
+	r.LobbyState <- NewLobbyView(r.Players, &r.Status, &winner)
 	close(r.StopTimer)
 	delete(*r.roomList, r.ID)
 	fmt.Printf("game %s ended\n", r.ID)

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 
-import {onMounted, onUnmounted, ref, useTemplateRef, watch} from "vue";
+import {onMounted, onUnmounted, ref, watch} from "vue";
 import {connect} from "@/lib/ws.ts";
 import {renderCanvas} from "@/lib/render.ts";
-import {type CellSub, directions} from "@/types";
+import {directions, type Player, statuses, type SubMessage} from "@/types";
 import {Subscription} from "centrifuge";
 import {getAuth} from "@/lib/auth.ts";
 import {useRouter} from "vue-router";
@@ -13,11 +13,13 @@ const canvasRef = ref<HTMLCanvasElement>();
 const sub = ref<Subscription | null>(null)
 const props = defineProps<{
   uuid: string
+  status: number | undefined
 }>()
-const emit = defineEmits(['gameStarted', 'setPlayers'])
+const emit = defineEmits(['setStatus', 'setPlayers'])
 
 const {direction} = useSwipe(canvasRef)
-const winner = ref<string>()
+const winner = ref<Player>()
+const statusId = ref<number>()
 const router = useRouter()
 
 const handleKeyDown = (event: KeyboardEvent) => {
@@ -58,6 +60,8 @@ watch(direction, (newDirection) => {
 })
 
 onMounted(() => {
+  statusId.value = props.status;
+
   if (canvasRef.value === undefined) {
     console.log("Can't find canvas");
     return
@@ -76,16 +80,15 @@ onMounted(() => {
   canvasRef.value.width = 50 * cellSize;
   canvasRef.value.height = 50 * cellSize;
 
-  sub.value.on('publication', function (data: CellSub) {
+  sub.value.on('publication', function (data: SubMessage) {
     if (data.data.event === "room_state") {
-      emit('gameStarted')
       renderCanvas(ctx, data.data.data.cells, cellSize);
     }
     if (data.data.event === "lobby_state") {
+      emit('setStatus', data.data.data.status_id);
       emit('setPlayers', data.data.data.players)
-      if (data.data.data.winner != null) {
-        winner.value = data.data.data.winner.name
-      }
+      statusId.value = data.data.data.status_id
+      winner.value = data.data.data.winner
     }
   });
 
@@ -103,13 +106,16 @@ function toMain() {
 </script>
 
 <template>
-  <canvas ref="canvasRef" class="touch-none relative aspect-square w-full border md:w-[500px] md:h-[500px]">
+  <canvas ref="canvasRef"
+          class="touch-none relative aspect-square w-full border md:w-[500px] md:h-[500px]">
   </canvas>
-  <div v-show="winner" class="absolute flex w-full h-full flex-row items-center justify-center">
+  <div v-show="statusId == statuses.ended"
+       class="absolute flex w-full h-full flex-row items-center justify-center">
     <div
       class="rounded-2xl w-[50%] md:w-[30%] h-[30%] bg-gray-50 border-1 shadow-2xl">
       <div class="p-4 flex flex-col gap-4">
-        <span class="text-xl"> Победитель: {{ winner ?? "не найден" }}</span>
+        <span v-if="winner.name" class="text-xl">Победитель: {{ winner.name }}</span>
+        <span v-else class="text-xl">Вы проиграли</span>
         <button @click.prevent="toMain"
                 class="shadow-lg rounded-2xl border-gray-400 bg-gray-200 border p-2 cursor-pointer hover:bg-gray-500 transition">
           Выйти

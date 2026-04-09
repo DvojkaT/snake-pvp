@@ -2,8 +2,9 @@
 import GameCanvas from "@/GameCanvas.vue";
 import {getAuth, getName} from "@/lib/auth.ts";
 import {useRoute, useRouter} from "vue-router";
-import {onMounted, ref} from "vue";
+import {computed, onMounted, ref} from "vue";
 import axios from "axios";
+import {type Player, statuses} from "@/types";
 
 const route = useRoute()
 const router = useRouter()
@@ -13,14 +14,31 @@ const uuid = getAuth()
 const gameUuid = route.params.gameId as string
 
 const isConnected = ref(false)
-const isGameStarted = ref(false)
 
-const playersList = ref<string[]>([])
+const playersList = ref<Player[]>([])
+const statusId = ref<number>()
+
+//todo Правильно распределить данные между GameCanvas и GamePage
 
 onMounted(() => {
-  join().then(() => {
+  join().then(({data: {data}}) => {
     isConnected.value = true
+    playersList.value = data.players
+    statusId.value = data.status_id
   })
+})
+
+const statusText = computed(() => {
+  switch (statusId.value) {
+    case statuses.lobby:
+      return "Лобби"
+    case statuses.active:
+      return "Активно"
+    case statuses.ended:
+      return "Закончен"
+    default:
+      return "Неизвестно"
+  }
 })
 
 async function join() {
@@ -35,7 +53,9 @@ async function join() {
 
 async function start() {
   try {
-    return await axios.post(`${siteUrl}/${gameUuid}/start`);
+    const data = await axios.post(`${siteUrl}/${gameUuid}/start`);
+    setStatus(statuses.active)
+    return data
   } catch (error) {
     console.error(error);
   }
@@ -45,8 +65,8 @@ function exit() {
   return router.push('/')
 }
 
-function gameStarted() {
-  isGameStarted.value = true
+function setStatus(status: number) {
+  statusId.value = status
 }
 
 function setPlayersList(players: string[]) {
@@ -72,6 +92,10 @@ function setPlayersList(players: string[]) {
           <span class="font-semibold break-all">{{ isConnected ? "Да" : "Нет" }}</span>
         </div>
         <div class="flex flex-col">
+          <span class="text-nowrap">Статус игры: </span>
+          <span class="font-semibold break-all">{{ statusText }}</span>
+        </div>
+        <div class="flex flex-col">
           <span class="text-nowrap">Идентификатор игры: </span>
           <span class="font-semibold break-all">{{ gameUuid }}</span>
         </div>
@@ -83,7 +107,7 @@ function setPlayersList(players: string[]) {
           <span>Ваше имя: </span>
           <span class="font-semibold break-all">{{ getName() }}</span>
         </div>
-        <button v-if="!isGameStarted" @click.prevent="start"
+        <button v-if="statusId == statuses.lobby" @click.prevent="start"
                 class="shadow-lg rounded-2xl border-gray-400 bg-gray-200 border p-2 cursor-pointer hover:bg-gray-500 transition">
           Начать
         </button>
@@ -93,7 +117,8 @@ function setPlayersList(players: string[]) {
   <div
     class="min-h-full min-w-full flex flex-col gap-10 items-center content-center justify-center mt-20">
     <h1 class="font-bold text-2xl">Змейка</h1>
-    <GameCanvas @set-players="setPlayersList" @game-started="gameStarted" :uuid="gameUuid"/>
+    <GameCanvas @set-players="setPlayersList" @set-status="setStatus" :status="statusId"
+                :uuid="gameUuid"/>
   </div>
   <div class="md:top-0 md:right-0 md:absolute">
     <div class="bg-gray-300 shadow-lg border-gray-400 border flex flex-col rounded-2xl p-4 m-4">

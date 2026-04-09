@@ -72,7 +72,7 @@ func joinGame(c *gin.Context, roomsList game.RoomList) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "error"})
 		return
 	}
-	OK(c, gin.H{"message": "ok"}) //todo Добавить вывод цвета
+	OK(c, game.NewLobbyView(room.Players, &room.Status, nil))
 }
 
 func startGame(c *gin.Context, roomsList game.RoomList) {
