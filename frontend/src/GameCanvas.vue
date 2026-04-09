@@ -82,6 +82,7 @@ onMounted(() => {
 
   sub.value.on('publication', function (data: SubMessage) {
     if (data.data.event === "room_state") {
+      emit('setStatus', statuses.active);
       renderCanvas(ctx, data.data.data.cells, cellSize);
     }
     if (data.data.event === "lobby_state") {
