@@ -114,7 +114,7 @@ function toMain() {
     <div
       class="rounded-2xl w-[50%] md:w-[30%] h-[30%] bg-gray-50 border-1 shadow-2xl">
       <div class="p-4 flex flex-col gap-4">
-        <span v-if="winner.name" class="text-xl">Победитель: {{ winner.name }}</span>
+        <span v-if="winner?.name" class="text-xl">Победитель: {{ winner.name }}</span>
         <span v-else class="text-xl">Вы проиграли</span>
         <button @click.prevent="toMain"
                 class="shadow-lg rounded-2xl border-gray-400 bg-gray-200 border p-2 cursor-pointer hover:bg-gray-500 transition">
